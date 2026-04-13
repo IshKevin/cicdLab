@@ -1,0 +1,41 @@
+- hosts: all
+  become: true
+
+  tasks:
+    - name: Install base packages
+      yum:
+        name:
+          - docker
+          - git
+          - java-17-amazon-corretto
+        state: present
+
+    - name: Start Docker
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+- hosts: jenkins
+  become: true
+
+  tasks:
+    - name: Add Jenkins repo
+      get_url:
+        url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
+        dest: /etc/yum.repos.d/jenkins.repo
+
+    - name: Import Jenkins key
+      rpm_key:
+        key: https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+
+    - name: Install Jenkins
+      yum:
+        name: jenkins
+        state: present
+
+    - name: Start Jenkins
+      service:
+        name: jenkins
+        state: started
+        enabled: true
