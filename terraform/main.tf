@@ -1,59 +1,36 @@
-provider "aws" {
-  region = var.region
-}
+terraform {
+  required_version = ">= 1.5.0"
 
-resource "aws_security_group" "cicd_sg" {
-  name = "cicd-sg"
-
-  ingress {
-    from_port = 22
-    to_port   = 22
-    protocol  = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port = 8080
-    to_port   = 8080
-    protocol  = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port = 5000
-    to_port   = 5000
-    protocol  = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port = 0
-    to_port   = 0
-    protocol  = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+  backend "s3" {
+    bucket         = "multicontainerlab-state-854fb003"
+    key            = "state/terraform.tfstate"
+    region         = "eu-west-1"
+    dynamodb_table = "terraform-lock"
   }
 }
 
-# Jenkins EC2
-resource "aws_instance" "jenkins" {
-  ami           = "ami-0c02fb55956c7d316"
-  instance_type = "t2.micro"
-  key_name      = var.key_name
-  security_groups = [aws_security_group.cicd_sg.name]
+module "jenkins" {
+  source = "./modules/ec2"
 
-  tags = {
-    Name = "Jenkins-Server"
-  }
+  name           = "jenkins"
+  instance_type  = var.instance_type
+  enable_jenkins = true
 }
 
-# App EC2
-resource "aws_instance" "app" {
-  ami           = "ami-0c02fb55956c7d316"
-  instance_type = "t2.micro"
-  key_name      = var.key_name
-  security_groups = [aws_security_group.cicd_sg.name]
+module "app" {
+  source = "./modules/ec2"
 
-  tags = {
-    Name = "App-Server"
-  }
+  name          = "app"
+  instance_type = var.instance_type
+}
+
+
+resource "local_file" "ansible_inventory" {
+  content = templatefile("${path.module}/inventory.tftpl", {
+    jenkins_ip = module.jenkins.public_ip
+    app_ip     = module.app.public_ip
+    key_path   = "../terraform/${module.jenkins.key_name}.pem"
+  })
+
+  filename = "../ansible/inventory.ini"
 }
