@@ -1,5 +1,5 @@
 output "public_ip" {
-  value = aws_instance.web.public_ip
+  value = aws_instance.this.public_ip
 }
 
 output "key_name" {
