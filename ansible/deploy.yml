@@ -3,10 +3,10 @@
 
   tasks:
     - name: Pull image
-      command: docker pull yourdockerhub/flask-app
+      command: docker pull ishikevin/flask-app
 
     - name: Remove old container
       command: docker rm -f flask-app || true
 
     - name: Run container
-      command: docker run -d -p 5000:5000 --name flask-app yourdockerhub/flask-app
+      command: docker run -d -p 5000:5000 --name flask-app ishikevin/flask-app
