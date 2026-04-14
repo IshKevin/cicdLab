@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE = "yourdockerhub/flask-app:latest"
+        IMAGE = "ishikevin/flask-app:latest"
     }
 
     triggers {
@@ -13,7 +13,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git 'https://github.com/yourusername/cicd-project.git'
+                git 'https://github.com/IshKevin/cicdLab.git'
             }
         }
 
