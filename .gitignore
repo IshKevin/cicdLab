@@ -26,3 +26,6 @@ jobs/
 *.tar
 .env.local
 .env.*.local
+
+*.lock.hcl
+*.lock
