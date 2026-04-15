@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         IMAGE = "ishikevin/flask-app:latest"
+        ANSIBLE_HOST_KEY_CHECKING = "False"
     }
 
     triggers {
