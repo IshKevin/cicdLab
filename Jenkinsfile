@@ -50,7 +50,7 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh 'ansible-playbook -i ansible/inventory.ini ansible/deploy.yml'
+                sh 'ansible-playbook -i ansible/inventory.ini ansible/deploy.yml --private-key /var/lib/jenkins/.ssh/app-key.pem'
             }
         }
     }
