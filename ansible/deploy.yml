@@ -2,11 +2,28 @@
   become: true
 
   tasks:
-    - name: Pull image
-      command: docker pull ishikevin/flask-app
+    - name: Install Docker
+      yum:
+        name: docker
+        state: present
+
+    - name: Start and enable Docker
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add ec2-user to docker group
+      user:
+        name: ec2-user
+        groups: docker
+        append: true
+
+    - name: Pull Docker image
+      command: docker pull ishikevin/flask-app:latest
 
     - name: Remove old container
       command: docker rm -f flask-app || true
 
     - name: Run container
-      command: docker run -d -p 5000:5000 --name flask-app ishikevin/flask-app
+      command: docker run -d -p 5000:5000 --name flask-app ishikevin/flask-app:latest
