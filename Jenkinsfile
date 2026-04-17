@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE = "ishikevin/flask-app:latest"
         REGISTRY = "docker.io"
-        SERVER = "ec2-user@YOUR_EC2_PUBLIC_IP"
+        SERVER = "ec2-user@34.244.28.57"
     }
 
     triggers {
