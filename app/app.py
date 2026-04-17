@@ -4,7 +4,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "CI/CD Running 🚀"
+    return "CI/CD Running 🚀 add push event"
 
 @app.route("/health")
 def health():
