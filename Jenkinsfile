@@ -7,9 +7,7 @@ pipeline {
         SERVER = "ec2-user@34.244.28.57"
     }
 
-    triggers {
-        githubPush()
-    }
+   
 
     stages {
 
