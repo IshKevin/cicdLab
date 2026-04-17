@@ -3,7 +3,8 @@ pipeline {
 
     environment {
         IMAGE = "ishikevin/flask-app:latest"
-        ANSIBLE_HOST_KEY_CHECKING = "False"
+        REGISTRY = "docker.io"
+        SERVER = "ec2-user@YOUR_EC2_PUBLIC_IP"
     }
 
     triggers {
@@ -12,47 +13,85 @@ pipeline {
 
     stages {
 
-        // stage('Checkout') {
-        //     steps {
-        //         git 'https://github.com/IshKevin/cicdLab.git'
-        //     }
-        // }
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
 
-        stage('Install') {
+        stage('Install Dependencies') {
             steps {
                 sh 'pip install -r app/requirements.txt'
             }
         }
 
-        stage('Test') {
+        stage('Run Tests') {
             steps {
                 sh 'pytest app/'
             }
         }
 
-        stage('Build Docker') {
+        stage('Build Docker Image') {
             steps {
                 sh 'docker build -t $IMAGE app/'
             }
         }
 
-        stage('Push Docker') {
+        stage('Push to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'docker-creds',
-                    usernameVariable: 'USER',
-                    passwordVariable: 'PASS'
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh 'echo $PASS | docker login -u $USER --password-stdin'
-                    sh 'docker push $IMAGE'
+                    sh '''
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    docker push $IMAGE
+                    '''
                 }
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy to EC2') {
             steps {
-                sh 'ansible-playbook -i ansible/inventory.ini ansible/deploy.yml --private-key /var/lib/jenkins/.ssh/app-key.pem'
+                sshagent(credentials: ['ec2-ssh-key']) {
+                    sh '''
+                    ssh -o StrictHostKeyChecking=no $SERVER << EOF
+
+                    # Stop on error
+                    set -e
+
+                    # Install Docker if missing
+                    if ! command -v docker &> /dev/null; then
+                        sudo yum update -y
+                        sudo yum install -y docker
+                        sudo systemctl start docker
+                        sudo systemctl enable docker
+                        sudo usermod -aG docker ec2-user
+                    fi
+
+                    # Pull latest image
+                    sudo docker pull ishikevin/flask-app:latest
+
+                    # Remove old container
+                    sudo docker rm -f flask-app || true
+
+                    # Run new container
+                    sudo docker run -d -p 5000:5000 --name flask-app ishikevin/flask-app:latest
+
+                    EOF
+                    '''
+                }
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Deployment successful 🚀'
+        }
+        failure {
+            echo 'Pipeline failed ❌'
         }
     }
 }
