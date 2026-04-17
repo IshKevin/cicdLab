@@ -52,38 +52,19 @@ pipeline {
             }
         }
 
-        stage('Deploy to EC2') {
-            steps {
-                sshagent(credentials: ['ec2-ssh-key']) {
-                    sh '''
-                    ssh -o StrictHostKeyChecking=no $SERVER << EOF
-
-                    # Stop on error
-                    set -e
-
-                    # Install Docker if missing
-                    if ! command -v docker &> /dev/null; then
-                        sudo yum update -y
-                        sudo yum install -y docker
-                        sudo systemctl start docker
-                        sudo systemctl enable docker
-                        sudo usermod -aG docker ec2-user
-                    fi
-
-                    # Pull latest image
-                    sudo docker pull ishikevin/flask-app:latest
-
-                    # Remove old container
-                    sudo docker rm -f flask-app || true
-
-                    # Run new container
-                    sudo docker run -d -p 5000:5000 --name flask-app ishikevin/flask-app:latest
-
-                    EOF
-                    '''
-                }
-            }
+    stage('Deploy to EC2') {
+    steps {
+        sshagent(credentials: ['ec2-ssh-key']) {
+            sh '''
+            ssh ec2-user@YOUR_IP '
+            docker pull ishikevin/flask-app:latest
+            docker rm -f flask-app || true
+            docker run -d -p 5000:5000 --name flask-app ishikevin/flask-app:latest
+            '
+            '''
         }
+    }
+}
     }
 
     post {
